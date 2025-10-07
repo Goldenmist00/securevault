@@ -206,20 +206,4 @@ securevault/
 
 
 
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) - The React framework
-- [shadcn/ui](https://ui.shadcn.com/) - Beautiful components
-- [MongoDB](https://www.mongodb.com/) - Database platform
-- [Vercel](https://vercel.com/) - Deployment platform
-
-## 📞 Support
-
-If you have any questions or need help, please:
-- Open an issue on GitHub
-- Check the [documentation](./BACKEND_SETUP.md)
-- Review the security architecture above
-
 ---
-
-**Built with ❤️ for privacy and security**
