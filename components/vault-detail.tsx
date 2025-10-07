@@ -209,12 +209,15 @@ export function VaultDetail() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="folder">Folder</Label>
-          <Select value={selected.folder || ""} onValueChange={(value) => updateSelected({ folder: value })}>
+          <Select 
+            value={selected.folder || "__none__"} 
+            onValueChange={(value) => updateSelected({ folder: value === "__none__" ? "" : value })}
+          >
             <SelectTrigger className="rounded-xl">
               <SelectValue placeholder="Select folder" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No folder</SelectItem>
+              <SelectItem value="__none__">No folder</SelectItem>
               {availableFolders.filter(f => f !== "All Items").map((folder) => (
                 <SelectItem key={folder} value={folder}>{folder}</SelectItem>
               ))}
