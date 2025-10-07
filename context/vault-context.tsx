@@ -8,6 +8,7 @@ import { decryptJSON, encryptJSON, deriveKey } from "@/lib/crypto"
 import { loadLocal, saveLocal } from "@/lib/storage"
 import { api } from "@/lib/api"
 import { showClipboardPermissionInfo } from "@/lib/clipboard-permissions"
+import { exportVault, importVault, downloadFile, readFileAsText } from "@/lib/import-export"
 import { nanoid } from "nanoid"
 
 type VaultItem = {
@@ -59,6 +60,8 @@ type Ctx = {
   toggleSidebar: () => void
   isMobileSidebarOpen: boolean
   session: Session | null
+  exportVaultData: () => Promise<void>
+  importVaultData: (file: File) => Promise<void>
 }
 
 const VaultCtx = createContext<Ctx | null>(null)
@@ -531,6 +534,43 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     setIsMobileSidebarOpen((s) => !s)
   }
 
+  async function exportVaultData() {
+    if (!keyRef.current || !session) {
+      throw new Error("Not authenticated")
+    }
+
+    try {
+      const exportData = await exportVault(items, keyRef.current)
+      const filename = `securevault-backup-${new Date().toISOString().split('T')[0]}.json`
+      downloadFile(exportData, filename)
+      console.log("✅ Vault exported successfully")
+    } catch (error) {
+      console.error("Export failed:", error)
+      throw error
+    }
+  }
+
+  async function importVaultData(file: File) {
+    if (!keyRef.current || !session) {
+      throw new Error("Not authenticated")
+    }
+
+    try {
+      const fileContent = await readFileAsText(file)
+      const importedItems = await importVault(fileContent, keyRef.current)
+      
+      // Merge with existing items (avoid duplicates by ID)
+      const existingIds = new Set(items.map(item => item.id))
+      const newItems = importedItems.filter(item => !existingIds.has(item.id))
+      
+      setItems(prev => [...newItems, ...prev])
+      console.log(`✅ Imported ${newItems.length} new items`)
+    } catch (error) {
+      console.error("Import failed:", error)
+      throw error
+    }
+  }
+
   const value: Ctx = {
     isAuthenticated,
     items: filtered,
@@ -560,6 +600,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     toggleSidebar,
     isMobileSidebarOpen,
     session,
+    exportVaultData,
+    importVaultData,
   }
 
   return <VaultCtx.Provider value={value}>{children}</VaultCtx.Provider>

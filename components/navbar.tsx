@@ -13,13 +13,61 @@ import { KeyRound, LogOut, Menu, Moon, Sun, Lock, Plus, Download, Upload, Shield
 import { useVault } from "@/context/vault-context"
 import { useTheme } from "@/hooks/use-theme"
 import { TwoFactorSetup } from "@/components/two-factor-setup"
+import { exportVault, importVault, downloadFile, readFileAsText } from "@/lib/import-export"
+import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useRef } from "react"
 
 export function Navbar() {
-  const { signOut, openGenerator, toggleSidebar, isMobileSidebarOpen, createItem, session } = useVault()
+  const { signOut, openGenerator, toggleSidebar, isMobileSidebarOpen, createItem, session, exportVaultData, importVaultData } = useVault()
   const { theme, toggleTheme } = useTheme()
+  const { toast } = useToast()
   const [twoFactorOpen, setTwoFactorOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleExport = async () => {
+    try {
+      await exportVaultData()
+      toast({
+        title: "Export successful",
+        description: "Your vault has been exported as an encrypted file.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Export failed",
+        description: error.message || "Failed to export vault",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleImport = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      await importVaultData(file)
+      toast({
+        title: "Import successful",
+        description: "Your vault items have been imported successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Import failed",
+        description: error.message || "Failed to import vault",
+        variant: "destructive",
+      })
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
 
   return (
     <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -69,11 +117,11 @@ export function Navbar() {
                 <Shield className="size-4" />
                 Enable 2FA
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2">
+              <DropdownMenuItem onClick={handleExport} className="gap-2">
                 <Download className="size-4" />
                 Export Vault
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2">
+              <DropdownMenuItem onClick={handleImport} className="gap-2">
                 <Upload className="size-4" />
                 Import Vault
               </DropdownMenuItem>
@@ -94,6 +142,15 @@ export function Navbar() {
           console.log('2FA enabled with secret:', secret)
         }}
         username={session?.username || ''}
+      />
+      
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
       />
     </header>
   )
