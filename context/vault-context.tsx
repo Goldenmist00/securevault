@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { decryptJSON, encryptJSON, deriveKey } from "@/lib/crypto"
 import { loadLocal, saveLocal } from "@/lib/storage"
 import { api } from "@/lib/api"
-import { showClipboardPermissionInfo } from "@/lib/clipboard-permissions"
+
 import { exportVault, importVault, downloadFile, readFileAsText } from "@/lib/import-export"
 import { nanoid } from "nanoid"
 
@@ -62,6 +62,8 @@ type Ctx = {
   session: Session | null
   exportVaultData: () => Promise<void>
   importVaultData: (file: File) => Promise<void>
+  showClipboardDialog: boolean
+  setShowClipboardDialog: (show: boolean) => void
 }
 
 const VaultCtx = createContext<Ctx | null>(null)
@@ -76,6 +78,7 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
   const [copied, setCopied] = useState(false)
   const [generatorOpen, setGeneratorOpen] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [showClipboardDialog, setShowClipboardDialog] = useState(false)
 
   // encryption key held only in memory
   const keyRef = useRef<CryptoKey | null>(null)
@@ -94,13 +97,18 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     if (s) setSession(s)
   }, [])
 
-  // Show clipboard permission info on first visit
+  // Show clipboard permission dialog after login
   useEffect(() => {
     if (isAuthenticated) {
-      // Small delay to let the UI settle
-      setTimeout(() => {
-        showClipboardPermissionInfo()
-      }, 2000)
+      // Check if we've already asked for permission
+      const hasAskedPermission = localStorage.getItem('sv:clipboard-permission-asked')
+      
+      if (!hasAskedPermission) {
+        // Small delay to let the UI settle
+        setTimeout(() => {
+          setShowClipboardDialog(true)
+        }, 1500)
+      }
     }
   }, [isAuthenticated])
 
@@ -602,6 +610,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
     session,
     exportVaultData,
     importVaultData,
+    showClipboardDialog,
+    setShowClipboardDialog,
   }
 
   return <VaultCtx.Provider value={value}>{children}</VaultCtx.Provider>

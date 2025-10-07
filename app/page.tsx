@@ -4,13 +4,27 @@ import { Navbar } from "@/components/navbar"
 import { VaultSidebar } from "@/components/vault-sidebar"
 import { VaultDetail } from "@/components/vault-detail"
 import { PasswordGeneratorDialog } from "@/components/password-generator-dialog"
+import { ClipboardPermissionDialog } from "@/components/clipboard-permission-dialog"
 import { useVault } from "@/context/vault-context"
 import { Card } from "@/components/ui/card"
 import { useEffect } from "react"
 import { cn } from "@/lib/utils"
 
 function DashboardInner() {
-  const { isAuthenticated } = useVault()
+  const { isAuthenticated, showClipboardDialog, setShowClipboardDialog } = useVault()
+
+  const handleClipboardPermission = (granted: boolean) => {
+    setShowClipboardDialog(false)
+    localStorage.setItem('sv:clipboard-permission-asked', 'true')
+    
+    if (granted) {
+      localStorage.setItem('sv:clipboard-permission-granted', 'true')
+      console.log("✅ Clipboard permission granted by user")
+    } else {
+      localStorage.setItem('sv:clipboard-permission-granted', 'false')
+      console.log("❌ Clipboard permission denied by user")
+    }
+  }
 
   useEffect(() => {
     // Focus handling or onboarding could go here
@@ -77,6 +91,10 @@ function DashboardInner() {
         </div>
       </main>
       <PasswordGeneratorDialog />
+      <ClipboardPermissionDialog 
+        open={showClipboardDialog}
+        onClose={handleClipboardPermission}
+      />
     </div>
   )
 }
